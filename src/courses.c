@@ -21,6 +21,7 @@ This file handles:
 #include <string.h>
 #include <stdlib.h>
 
+
 #include "../include/sqlite3.h"
 #include "../include/courses.h"
 #include "../include/users.h"
@@ -37,6 +38,7 @@ static int lessonFound = 0;
 
 static int courseFound = 0;
 
+static int studentCount = 0;
 /* =================================
             CALLBACKS
 ================================= */
@@ -207,6 +209,18 @@ int teacherLessonsCallback(
     return 0;
 }
 
+int countStudentsCallback(
+    void *NotUsed,
+    int argc,
+    char **argv,
+    char **azColName
+) {
+
+    studentCount = atoi(argv[0]);
+
+    return 0;
+}
+
 int viewCoursesCallback(
     void *NotUsed,
     int argc,
@@ -219,12 +233,31 @@ int viewCoursesCallback(
     printf("Description: %s\n", argv[2]);
     printf("Category: %s\n", argv[3]);
 
-
     sqlite3 *db;
 
     sqlite3_open("database/courses.db", &db);
 
     char sql[500];
+
+    studentCount = 0;
+
+    sprintf(
+        sql,
+        "SELECT COUNT(*) "
+        "FROM enrollments "
+        "WHERE course_id=%s;",
+        argv[0]
+    );
+
+    sqlite3_exec(
+        db,
+        sql,
+        countStudentsCallback,
+        0,
+        0
+    );
+
+    printf("Enrolled Students: %d\n", studentCount);
 
     sprintf(
         sql,
@@ -233,15 +266,20 @@ int viewCoursesCallback(
         argv[0]
     );
 
-    printf("\u001b[1;36mLessons:\u001b[0m\n");
+    printf("\033[1;36mLessons:\033[0m\n");
 
-    sqlite3_exec(db, sql, teacherLessonsCallback, 0, 0);
+    sqlite3_exec(
+        db,
+        sql,
+        teacherLessonsCallback,
+        0,
+        0
+    );
+
     sqlite3_close(db);
-
 
     return 0;
 }
-
 int enrollmentCallback(
     void *NotUsed,
     int argc,
