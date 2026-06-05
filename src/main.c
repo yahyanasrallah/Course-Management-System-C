@@ -39,9 +39,20 @@ int main() {
         printf("2. Login\n");
         printf("3. Exit\n");
 
-        printf("\nChoose an option: ");
-        scanf("%d", &choice);
+       printf("\nChoose an option: ");
 
+        if(scanf("%d", &choice) != 1) {
+
+         printf(
+        "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+        );
+
+        while(getchar() != '\n');
+
+        continue;
+    }
+
+    
         switch(choice) {
 
             case 1:

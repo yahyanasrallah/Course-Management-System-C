@@ -68,7 +68,14 @@ void saveUser(User user) {
 
     sqlite3 *db;
 
-    sqlite3_open("database/courses.db", &db);
+    if(sqlite3_open("database/courses.db", &db) != SQLITE_OK) {
+
+        printf(
+            "\n\033[1;31mDatabase connection failed!\033[0m\n"
+        );
+
+        return;
+    }
 
     char sql[500];
 
@@ -81,7 +88,16 @@ void saveUser(User user) {
         user.role
     );
 
-    sqlite3_exec(db, sql, 0, 0, 0);
+    if(sqlite3_exec(db, sql, 0, 0, 0) != SQLITE_OK) {
+
+        printf(
+            "\n\033[1;31mFailed to save user!\033[0m\n"
+        );
+
+        sqlite3_close(db);
+
+        return;
+    }
 
     printf(
         "\n\033[1;32mUser saved successfully!\033[0m\n"
@@ -89,7 +105,6 @@ void saveUser(User user) {
 
     sqlite3_close(db);
 }
-
 /*
 ====================================
 Register User
@@ -112,19 +127,47 @@ void registerUser() {
     printf("2. Teacher\n");
     printf("3. Exit\n");
 
-    printf("\nChoose role: ");
-    scanf("%d", &roleChoice);
+    while(1) {
+
+        printf("\nChoose role (1-3): ");
+
+        if(scanf("%d", &roleChoice) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(roleChoice < 1 || roleChoice > 3) {
+
+            printf(
+                "\n\033[1;31mInvalid role! Choose between 1 and 3.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     if(roleChoice == 3) {
+
+        printf(
+            "\n\033[1;33mRegistration cancelled.\033[0m\n"
+        );
 
         return;
     }
 
     printf("Enter username: ");
-    scanf("%s", newUser.username);
+    scanf("%49s", newUser.username);
 
     printf("Enter password: ");
-    scanf("%s", newUser.password);
+    scanf("%49s", newUser.password);
 
     printf("\nRegistration Data:\n");
 
@@ -137,18 +180,10 @@ void registerUser() {
         case 2:
             strcpy(newUser.role, TEACHER_ROLE);
             break;
-
-        default:
-            printf(
-                "\n\033[1;31mInvalid role.\033[0m\n"
-            );
-            return;
     }
 
     printf("Username: %s\n", newUser.username);
-
     printf("Password: %s\n", newUser.password);
-
     printf("Role: %s\n", newUser.role);
 
     if(userExists(newUser.username)) {
@@ -162,7 +197,6 @@ void registerUser() {
         saveUser(newUser);
     }
 }
-
 /*
 ====================================
 Check Existing User
@@ -175,7 +209,14 @@ int userExists(char username[]) {
 
     sqlite3 *db;
 
-    sqlite3_open("database/courses.db", &db);
+    if(sqlite3_open("database/courses.db", &db) != SQLITE_OK) {
+
+        printf(
+            "\n\033[1;31mDatabase connection failed!\033[0m\n"
+        );
+
+        return 0;
+    }
 
     foundUser = 0;
 
@@ -194,7 +235,6 @@ int userExists(char username[]) {
 
     return foundUser;
 }
-
 /*
 ====================================
 Student Menu
@@ -219,8 +259,32 @@ void showStudentMenu() {
         printf("7. Track Progress\n");
         printf("8. Logout\n");
 
-        printf("\nChoose an option: ");
-        scanf("%d", &choice);
+        while(1) {
+
+            printf("\nChoose an option (1-8): ");
+
+            if(scanf("%d", &choice) != 1) {
+
+                printf(
+                    "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+                );
+
+                while(getchar() != '\n');
+
+                continue;
+            }
+
+            if(choice < 1 || choice > 8) {
+
+                printf(
+                    "\n\033[1;31mInvalid option! Choose between 1 and 8.\033[0m\n"
+                );
+
+                continue;
+            }
+
+            break;
+        }
 
         switch(choice) {
 
@@ -255,15 +319,9 @@ void showStudentMenu() {
             case 8:
                 printf("\nLogging out...\n");
                 return;
-
-            default:
-                printf(
-                    "\n\033[1;31mInvalid option.\033[0m\n"
-                );
         }
     }
 }
-
 /*
 ====================================
 Teacher Menu
@@ -289,8 +347,32 @@ void showTeacherMenu() {
         printf("8. View Reviews\n");
         printf("9. Logout\n");
 
-        printf("\nChoose an option: ");
-        scanf("%d", &choice);
+        while(1) {
+
+            printf("\nChoose an option (1-9): ");
+
+            if(scanf("%d", &choice) != 1) {
+
+                printf(
+                    "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+                );
+
+                while(getchar() != '\n');
+
+                continue;
+            }
+
+            if(choice < 1 || choice > 9) {
+
+                printf(
+                    "\n\033[1;31mInvalid option! Choose between 1 and 9.\033[0m\n"
+                );
+
+                continue;
+            }
+
+            break;
+        }
 
         switch(choice) {
 
@@ -329,15 +411,9 @@ void showTeacherMenu() {
             case 9:
                 printf("\nLogging out...\n");
                 return;
-
-            default:
-                printf(
-                    "\n\033[1;31mInvalid option.\033[0m\n"
-                );
         }
     }
 }
-
 /*
 ====================================
 User Login
@@ -354,10 +430,10 @@ void loginUser() {
     printf("\n===== LOGIN =====\n");
 
     printf("Enter username: ");
-    scanf("%s", username);
+    scanf("%49s", username);
 
     printf("Enter password: ");
-    scanf("%s", password);
+    scanf("%49s", password);
 
     sqlite3 *db;
 

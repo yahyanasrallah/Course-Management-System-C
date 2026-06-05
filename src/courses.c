@@ -39,6 +39,9 @@ static int lessonFound = 0;
 static int courseFound = 0;
 
 static int studentCount = 0;
+
+int recordsFound = 0;
+
 /* =================================
             CALLBACKS
 ================================= */
@@ -87,6 +90,8 @@ int progressCallback(
     char **azColName
 ) {
 
+    recordsFound = 1;
+
     int totalLessons = atoi(argv[2]);
 
     int completedLessons = atoi(argv[3]);
@@ -111,7 +116,6 @@ int progressCallback(
 
     return 0;
 }
-
 int checkLessonExistsCallback(
     void *NotUsed,
     int argc,
@@ -227,7 +231,7 @@ int viewCoursesCallback(
     char **argv,
     char **azColName
 ) {
-
+    recordsFound = 1;
     printf("\nCourse ID: %s\n", argv[0]);
     printf("Title: %s\n", argv[1]);
     printf("Description: %s\n", argv[2]);
@@ -280,6 +284,7 @@ int viewCoursesCallback(
 
     return 0;
 }
+
 int enrollmentCallback(
     void *NotUsed,
     int argc,
@@ -333,43 +338,63 @@ void addCourse() {
     printf("Enter course description: ");
     scanf(" %[^\n]", newCourse.description);
 
-    printf("\nSelect category:\n");
+   printf("\nSelect category:\n");
 
-    printf("1. Programming\n");
-    printf("2. Artificial Intelligence\n");
-    printf("3. Web Development\n");
-    printf("4. Cyber Security\n");
-    printf("5. Data Science\n");
+printf("1. Programming\n");
+printf("2. Artificial Intelligence\n");
+printf("3. Web Development\n");
+printf("4. Cyber Security\n");
+printf("5. Data Science\n");
 
-    printf("\nChoose category: ");
-    scanf("%d", &categoryChoice);
+while(1) {
 
-    switch(categoryChoice) {
+    printf("\nChoose category (1-5): ");
 
-        case 1:
-            strcpy(newCourse.category, "Programming");
-            break;
+    if(scanf("%d", &categoryChoice) != 1) {
 
-        case 2:
-            strcpy(newCourse.category, "Artificial Intelligence");
-            break;
+        printf(
+            "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+        );
 
-        case 3:
-            strcpy(newCourse.category, "Web Development");
-            break;
+        while(getchar() != '\n');
 
-        case 4:
-            strcpy(newCourse.category, "Cyber Security");
-            break;
-
-        case 5:
-            strcpy(newCourse.category, "Data Science");
-            break;
-
-        default:
-            printf("\nInvalid category.\n");
-            return;
+        continue;
     }
+
+    if(categoryChoice < 1 || categoryChoice > 5) {
+
+        printf(
+            "\n\033[1;31mInvalid category! Choose between 1 and 5.\033[0m\n"
+        );
+
+        continue;
+    }
+
+    break;
+}
+
+switch(categoryChoice) {
+
+    case 1:
+        strcpy(newCourse.category, "Programming");
+        break;
+
+    case 2:
+        strcpy(newCourse.category, "Artificial Intelligence");
+        break;
+
+    case 3:
+        strcpy(newCourse.category, "Web Development");
+        break;
+
+    case 4:
+        strcpy(newCourse.category, "Cyber Security");
+        break;
+
+    case 5:
+        strcpy(newCourse.category, "Data Science");
+        break;
+}
 
     printf("\nCourse Data:\n");
 
@@ -409,6 +434,8 @@ void viewMyCourses() {
 
     sqlite3_open("database/courses.db", &db);
 
+    recordsFound = 0;
+
     char sql[500];
 
     sprintf(
@@ -422,10 +449,16 @@ void viewMyCourses() {
 
     sqlite3_exec(db, sql, viewCoursesCallback, 0, 0);
 
+    if(!recordsFound) {
+
+        printf(
+            "\n\033[1;31mNo courses found.\033[0m\n"
+        );
+    }
+
     printf("\nPress Enter to continue...");
     getchar();
     getchar();
-
 
     sqlite3_close(db);
 }
@@ -436,11 +469,20 @@ void viewAllCourses() {
 
     sqlite3_open("database/courses.db", &db);
 
+    recordsFound = 0;
+
     char *sql = "SELECT * FROM courses;";
 
     printf("\n===== ALL COURSES =====\n");
 
     sqlite3_exec(db, sql, viewCoursesCallback, 0, 0);
+
+    if(!recordsFound) {
+
+        printf(
+            "\n\033[1;31mNo courses available.\033[0m\n"
+        );
+    }
 
     printf("\nPress Enter to continue...");
     getchar();
@@ -460,17 +502,75 @@ void editCourse() {
 
     viewMyCourses();
 
-    printf("\nEnter Course ID: ");
-    scanf("%d", &courseId);
+    while(1) {
+
+        printf("\nEnter Course ID: ");
+
+        if(scanf("%d", &courseId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Course ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(courseId <= 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Course ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     printf("\nWhat do you want to edit?\n");
 
     printf("1. Title\n");
     printf("2. Description\n");
     printf("3. Category\n");
+    printf("0. Cancel\n");
 
-    printf("\nChoose option: ");
-    scanf("%d", &editChoice);
+    while(1) {
+
+        printf("\nChoose option (0-3): ");
+
+        if(scanf("%d", &editChoice) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(editChoice == 0) {
+
+            printf(
+                "\n\033[1;33mEdit operation cancelled.\033[0m\n"
+            );
+
+            return;
+        }
+
+        if(editChoice < 1 || editChoice > 3) {
+
+            printf(
+                "\n\033[1;31mInvalid option! Choose between 0 and 3.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     getchar();
 
@@ -509,7 +609,7 @@ void editCourse() {
             currentUsername
         );
 
-    } else if(editChoice == 3) {
+    } else {
 
         sprintf(
             sql,
@@ -521,16 +621,24 @@ void editCourse() {
             courseId,
             currentUsername
         );
-
-    } else {
-
-        printf("\nInvalid option.\n");
-        return;
     }
 
     sqlite3_exec(db, sql, 0, 0, 0);
 
-    printf("\n\033[1;32mCourse updated successfully!\033[0m\n");
+    if(sqlite3_changes(db) == 0) {
+
+        printf(
+            "\n\033[1;31mCourse not found.\033[0m\n"
+        );
+
+        sqlite3_close(db);
+
+        return;
+    }
+
+    printf(
+        "\n\033[1;32mCourse updated successfully!\033[0m\n"
+    );
 
     sqlite3_close(db);
 }
@@ -545,8 +653,41 @@ void deleteCourse() {
 
     viewMyCourses();
 
-    printf("\nEnter Course ID to delete: ");
-    scanf("%d", &courseId);
+    while(1) {
+
+        printf("\nEnter Course ID to delete (0 to cancel): ");
+
+        if(scanf("%d", &courseId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Course ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(courseId == 0) {
+
+            printf(
+                "\n\033[1;33mDelete operation cancelled.\033[0m\n"
+            );
+
+            return;
+        }
+
+        if(courseId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Course ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     getchar();
 
@@ -561,7 +702,10 @@ void deleteCourse() {
 
     if(confirm != 'y' && confirm != 'Y') {
 
-        printf("\nDeletion cancelled.\n");
+        printf(
+            "\n\033[1;33mDeletion cancelled.\033[0m\n"
+        );
+
         return;
     }
 
@@ -581,6 +725,17 @@ void deleteCourse() {
     );
 
     sqlite3_exec(db, sql, 0, 0, 0);
+
+    if(sqlite3_changes(db) == 0) {
+
+        printf(
+            "\n\033[1;31mCourse not found.\033[0m\n"
+        );
+
+        sqlite3_close(db);
+
+        return;
+    }
 
     sprintf(
         sql,
@@ -617,6 +772,8 @@ void searchCourses() {
 
         sqlite3_open("database/courses.db", &db);
 
+        recordsFound = 0;
+
         char sql[1000];
 
         sprintf(
@@ -630,17 +787,52 @@ void searchCourses() {
 
         sqlite3_exec(db, sql, viewCoursesCallback, 0, 0);
 
+        if(!recordsFound) {
+
+            printf(
+                "\n\033[1;31mNo courses found.\033[0m\n"
+            );
+        }
+
         sqlite3_close(db);
 
-        printf("\n1. Search Again\n");
-        printf("2. Exit Search\n");
+        while(1) {
 
-        printf("\nChoose option: ");
-        scanf("%d", &choice);
+            printf("\n1. Search Again\n");
+            printf("2. Exit Search\n");
+
+            printf("\nChoose option (1-2): ");
+
+            if(scanf("%d", &choice) != 1) {
+
+                printf(
+                    "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+                );
+
+                while(getchar() != '\n');
+
+                continue;
+            }
+
+            if(choice < 1 || choice > 2) {
+
+                printf(
+                    "\n\033[1;31mInvalid option! Choose 1 or 2.\033[0m\n"
+                );
+
+                continue;
+            }
+
+            break;
+        }
 
         if(choice == 2) {
 
-            break;
+            printf(
+                "\n\033[1;33mSearch closed.\033[0m\n"
+            );
+
+            return;
         }
     }
 }
@@ -651,8 +843,41 @@ void enrollInCourse() {
 
     printf("\n===== ENROLL IN COURSE =====\n");
 
-    printf("Enter Course ID: ");
-    scanf("%d", &courseId);
+    while(1) {
+
+        printf("\nEnter Course ID (0 to cancel): ");
+
+        if(scanf("%d", &courseId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Course ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(courseId == 0) {
+
+            printf(
+                "\n\033[1;33mEnrollment cancelled.\033[0m\n"
+            );
+
+            return;
+        }
+
+        if(courseId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Course ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     courseFound = 0;
 
@@ -723,6 +948,8 @@ void viewStudentCourses() {
 
     sqlite3_open("database/courses.db", &db);
 
+    recordsFound = 0;
+
     char sql[1000];
 
     sprintf(
@@ -739,6 +966,13 @@ void viewStudentCourses() {
     printf("\n===== MY ENROLLED COURSES =====\n");
 
     sqlite3_exec(db, sql, viewCoursesCallback, 0, 0);
+
+    if(!recordsFound) {
+
+        printf(
+            "\n\033[1;31mYou are not enrolled in any courses.\033[0m\n"
+        );
+    }
 
     printf("\nPress Enter to continue...");
     getchar();
@@ -779,22 +1013,31 @@ void viewEnrolledStudents() {
 
     sqlite3_open("database/courses.db", &db);
 
+    recordsFound = 0;
+
     char sql[1000];
 
     sprintf(
-    sql,
-    "SELECT courses.title, enrollments.student_username "
-    "FROM courses "
-    "JOIN enrollments "
-    "ON courses.id = enrollments.course_id "
-    "WHERE courses.teacher_username='%s' "
-    "ORDER BY courses.title;",
-    currentUsername
+        sql,
+        "SELECT courses.title, enrollments.student_username "
+        "FROM courses "
+        "JOIN enrollments "
+        "ON courses.id = enrollments.course_id "
+        "WHERE courses.teacher_username='%s' "
+        "ORDER BY courses.title;",
+        currentUsername
     );
 
     printf("\n===== ENROLLED STUDENTS =====\n");
 
     sqlite3_exec(db, sql, enrolledStudentsCallback, 0, 0);
+
+    if(!recordsFound) {
+
+        printf(
+            "\n\033[1;31mNo enrolled students found.\033[0m\n"
+        );
+    }
 
     printf("\nPress Enter to continue...");
     getchar();
@@ -802,7 +1045,6 @@ void viewEnrolledStudents() {
 
     sqlite3_close(db);
 }
-
 /* =================================
         LESSON FUNCTIONS
 ================================= */
@@ -815,20 +1057,42 @@ void addLesson() {
 
     viewMyCourses();
 
-    printf("\n1. Add Lesson\n");
-    printf("2. Exit\n");
+    while(1) {
 
-    printf("\nChoose option: ");
-    scanf("%d", &choice);
+        printf("\n1. Add Lesson\n");
+        printf("2. Exit\n");
+
+        printf("\nChoose option (1-2): ");
+
+        if(scanf("%d", &choice) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(choice < 1 || choice > 2) {
+
+            printf(
+                "\n\033[1;31mInvalid option! Choose 1 or 2.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     if(choice == 2) {
 
-        return;
-    }
+        printf(
+            "\n\033[1;33mOperation cancelled.\033[0m\n"
+        );
 
-    if(choice != 1) {
-
-        printf("\nInvalid option.\n");
         return;
     }
 
@@ -837,8 +1101,41 @@ void addLesson() {
     char lessonTitle[100];
     char lessonContent[500];
 
-    printf("\nEnter Course ID: ");
-    scanf("%d", &courseId);
+    while(1) {
+
+        printf("\nEnter Course ID (0 to cancel): ");
+
+        if(scanf("%d", &courseId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Course ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(courseId == 0) {
+
+            printf(
+                "\n\033[1;33mOperation cancelled.\033[0m\n"
+            );
+
+            return;
+        }
+
+        if(courseId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Course ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     getchar();
 
@@ -885,8 +1182,41 @@ void editLesson() {
 
     viewMyCourses();
 
-    printf("\nEnter Course ID: ");
-    scanf("%d", &courseId);
+    while(1) {
+
+        printf("\nEnter Course ID (0 to cancel): ");
+
+        if(scanf("%d", &courseId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Course ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(courseId == 0) {
+
+            printf(
+                "\n\033[1;33mEdit operation cancelled.\033[0m\n"
+            );
+
+            return;
+        }
+
+        if(courseId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Course ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     sqlite3 *db;
 
@@ -905,16 +1235,87 @@ void editLesson() {
 
     sqlite3_exec(db, sql, lessonsCallback, 0, 0);
 
-    printf("\nEnter Lesson ID: ");
-    scanf("%d", &lessonId);
+    while(1) {
+
+        printf("\nEnter Lesson ID (0 to cancel): ");
+
+        if(scanf("%d", &lessonId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Lesson ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(lessonId == 0) {
+
+            printf(
+                "\n\033[1;33mEdit operation cancelled.\033[0m\n"
+            );
+
+            sqlite3_close(db);
+
+            return;
+        }
+
+        if(lessonId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Lesson ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     printf("\nWhat do you want to edit?\n");
 
     printf("1. Lesson Title\n");
     printf("2. Lesson Content\n");
+    printf("0. Cancel\n");
 
-    printf("\nChoose option: ");
-    scanf("%d", &choice);
+    while(1) {
+
+        printf("\nChoose option (0-2): ");
+
+        if(scanf("%d", &choice) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(choice == 0) {
+
+            printf(
+                "\n\033[1;33mEdit operation cancelled.\033[0m\n"
+            );
+
+            sqlite3_close(db);
+
+            return;
+        }
+
+        if(choice < 1 || choice > 2) {
+
+            printf(
+                "\n\033[1;31mInvalid option! Choose between 0 and 2.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     getchar();
 
@@ -932,7 +1333,7 @@ void editLesson() {
             lessonId
         );
 
-    } else if(choice == 2) {
+    } else {
 
         sprintf(
             sql,
@@ -942,17 +1343,20 @@ void editLesson() {
             newValue,
             lessonId
         );
+    }
 
-    } else {
+    sqlite3_exec(db, sql, 0, 0, 0);
 
-        printf("\nInvalid option.\n");
+    if(sqlite3_changes(db) == 0) {
+
+        printf(
+            "\n\033[1;31mLesson not found.\033[0m\n"
+        );
 
         sqlite3_close(db);
 
         return;
     }
-
-    sqlite3_exec(db, sql, 0, 0, 0);
 
     printf(
         "\n\033[1;32mLesson updated successfully!\033[0m\n"
@@ -970,12 +1374,36 @@ void viewLessonContent() {
 
     viewStudentCourses();
 
-    printf("\nEnter Course ID (0 to Exit): ");
-    scanf("%d", &courseId);
+    while(1) {
 
-    if(courseId == 0) {
+        printf("\nEnter Course ID (0 to Exit): ");
 
-        return;
+        if(scanf("%d", &courseId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Course ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(courseId == 0) {
+
+            return;
+        }
+
+        if(courseId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Course ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
     }
 
     sqlite3 *db;
@@ -1023,14 +1451,38 @@ void viewLessonContent() {
 
     sqlite3_exec(db, sql, lessonsCallback, 0, 0);
 
-    printf("\nEnter Lesson ID (0 to Exit): ");
-    scanf("%d", &lessonId);
+    while(1) {
 
-    if(lessonId == 0) {
+        printf("\nEnter Lesson ID (0 to Exit): ");
 
-        sqlite3_close(db);
+        if(scanf("%d", &lessonId) != 1) {
 
-        return;
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Lesson ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(lessonId == 0) {
+
+            sqlite3_close(db);
+
+            return;
+        }
+
+        if(lessonId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Lesson ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
     }
 
     lessonFound = 0;
@@ -1074,28 +1526,80 @@ void viewLessonContent() {
 
     int option;
 
-    printf("\n1. Mark as Completed\n");
-    printf("2. Exit\n");
+    while(1) {
 
-    printf("\nChoose option: ");
-    scanf("%d", &option);
+        printf("\n1. Mark as Completed\n");
+        printf("2. Exit\n");
+
+        printf("\nChoose option (1-2): ");
+
+        if(scanf("%d", &option) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(option < 1 || option > 2) {
+
+            printf(
+                "\n\033[1;31mInvalid option! Choose 1 or 2.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
+    }
 
     if(option == 1) {
 
         sprintf(
             sql,
-            "INSERT INTO lesson_progress "
-            "(student_username, lesson_id, completed) "
-            "VALUES ('%s', %d, 1);",
+            "SELECT * FROM lesson_progress "
+            "WHERE student_username='%s' "
+            "AND lesson_id=%d;",
             currentUsername,
             lessonId
         );
 
-        sqlite3_exec(db, sql, 0, 0, 0);
+        lessonFound = 0;
 
-        printf(
-            "\n\033[1;32mLesson marked as completed!\033[0m\n"
+        sqlite3_exec(
+            db,
+            sql,
+            checkLessonExistsCallback,
+            0,
+            0
         );
+
+        if(lessonFound) {
+
+            printf(
+                "\n\033[1;33mLesson already completed.\033[0m\n"
+            );
+
+        } else {
+
+            sprintf(
+                sql,
+                "INSERT INTO lesson_progress "
+                "(student_username, lesson_id, completed) "
+                "VALUES ('%s', %d, 1);",
+                currentUsername,
+                lessonId
+            );
+
+            sqlite3_exec(db, sql, 0, 0, 0);
+
+            printf(
+                "\n\033[1;32mLesson marked as completed!\033[0m\n"
+            );
+        }
     }
 
     printf("\nPress Enter to continue...");
@@ -1104,7 +1608,6 @@ void viewLessonContent() {
 
     sqlite3_close(db);
 }
-
 
 /* =================================
         PROGRESS FUNCTIONS
@@ -1115,6 +1618,8 @@ void trackProgress() {
     sqlite3 *db;
 
     sqlite3_open("database/courses.db", &db);
+
+    recordsFound = 0;
 
     char sql[3000];
 
@@ -1147,13 +1652,19 @@ void trackProgress() {
 
     sqlite3_exec(db, sql, progressCallback, 0, 0);
 
+    if(!recordsFound) {
+
+        printf(
+            "\n\033[1;31mNo enrolled courses found.\033[0m\n"
+        );
+    }
+
     printf("\nPress Enter to continue...");
     getchar();
     getchar();
 
     sqlite3_close(db);
 }
-
 /* =================================
         REVIEW FUNCTIONS
 ================================= */
@@ -1169,12 +1680,36 @@ void addReview() {
 
     viewStudentCourses();
 
-    printf("\nEnter Course ID (0 to Exit): ");
-    scanf("%d", &courseId);
+    while(1) {
 
-    if(courseId == 0) {
+        printf("\nEnter Course ID (0 to Exit): ");
 
-        return;
+        if(scanf("%d", &courseId) != 1) {
+
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a valid Course ID.\033[0m\n"
+            );
+
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(courseId == 0) {
+
+            return;
+        }
+
+        if(courseId < 0) {
+
+            printf(
+                "\n\033[1;31mInvalid Course ID.\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
     }
 
     courseFound = 0;
@@ -1211,18 +1746,31 @@ void addReview() {
         return;
     }
 
-    printf("Enter Rating (1-5): ");
-    scanf("%d", &rating);
+    while(1) {
 
-    if(rating < 1 || rating > 5) {
+        printf("Enter Rating (1-5): ");
 
-        printf(
-            "\n\033[1;31mRating must be between 1 and 5!\033[0m\n"
-        );
+        if(scanf("%d", &rating) != 1) {
 
-        sqlite3_close(db);
+            printf(
+                "\n\033[1;31mInvalid input! Please enter a number.\033[0m\n"
+            );
 
-        return;
+            while(getchar() != '\n');
+
+            continue;
+        }
+
+        if(rating < 1 || rating > 5) {
+
+            printf(
+                "\n\033[1;31mRating must be between 1 and 5!\033[0m\n"
+            );
+
+            continue;
+        }
+
+        break;
     }
 
     getchar();
@@ -1252,10 +1800,11 @@ void addReview() {
 
 void viewReviews() {
 
-
     sqlite3 *db;
 
     sqlite3_open("database/courses.db", &db);
+
+    recordsFound = 0;
 
     char sql[3000];
 
@@ -1282,6 +1831,13 @@ void viewReviews() {
     printf("\n===== COURSE REVIEWS =====\n");
 
     sqlite3_exec(db, sql, reviewsCallback, 0, 0);
+
+    if(!recordsFound) {
+
+        printf(
+            "\n\033[1;31mNo reviews found.\033[0m\n"
+        );
+    }
 
     printf("\nPress Enter to continue...");
     getchar();
